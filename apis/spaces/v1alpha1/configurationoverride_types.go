@@ -18,6 +18,7 @@ import (
 	xpv1 "github.com/crossplane/crossplane-runtime/apis/common/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/types"
 )
 
 // +kubebuilder:object:root=true
@@ -59,8 +60,17 @@ type Metadata struct {
 	Annotations map[string]string `json:"annotations,omitempty"`
 }
 
+type Spec struct {
+	// +optional
+	ManagementPolicies xpv1.ManagementPolicies `json:"managementPolicies,omitempty"`
+}
+
 type Patch struct {
+	// +optional
 	Metadata *Metadata `json:"metadata,omitempty"`
+
+	// +optional
+	Spec *Spec `json:"spec,omitempty"`
 }
 
 type ConfigurationOverrideSpec struct {
@@ -74,8 +84,28 @@ type ConfigurationOverrideSpec struct {
 	Patch           Patch           `json:"patch"`
 }
 
+type PatchState string
+
+const (
+	PatchStateFailure PatchState = "Failure"
+	PatchStateError   PatchState = "Error"
+	PatchStateSuccess PatchState = "Success"
+)
+
+type AppliedPatch struct {
+	corev1.TypedObjectReference `json:",inline"`
+	UID                         types.UID  `json:"uid"`
+	Status                      PatchState `json:"status"`
+
+	// +optional
+	Message *string `json:"message,omitempty"`
+}
+
 type ConfigurationOverrideStatus struct {
 	xpv1.ResourceStatus `json:",inline"`
+
+	// +optional
+	AppliedPatches []AppliedPatch `json:"objectRefs,omitempty"`
 }
 
 func init() {
